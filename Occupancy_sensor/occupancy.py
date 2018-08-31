@@ -135,7 +135,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
 
     parser.add_argument('--input', help='Input relative file name', required=True)
-    parser.add_argument('--model', help='if type == regression, enter anything. Else enter ["SVM", "DT", "KNN", "PERC", "NAIVE"]', required=True)
+    parser.add_argument('--model', help='enter ["SVM", "DT", "KNN", "PERC", "NAIVE"]', required=True)
 
     args = parser.parse_args()
 
