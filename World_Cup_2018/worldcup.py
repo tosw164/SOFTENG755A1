@@ -23,12 +23,11 @@ from sklearn.svm import SVC
 from sklearn.metrics import mean_squared_error, r2_score
 
 
-
-
 TEST_PERCENTAGE = 0.2
 MAX_PERCENTAGE = 100
+FILE_PATH = '2018 worldcup.csv'
 
-worldcup_information = pd.read_csv('2018 worldcup.csv')
+worldcup_information = pd.read_csv(FILE_PATH)
 worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
 
 wc_features = worldcup_information.iloc[:, np.arange(21)].copy()
