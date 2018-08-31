@@ -73,50 +73,59 @@ def world_cup_classification(type):
     x = worldcup.iloc[:,:20]
     y = worldcup.iloc[:, -1]
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_PERCENTAGE)
+    all_acc = []
+    ITERATIONS = 20
 
-    if type == PERCEPTRON:
-        params = {
-            'alpha':[10**x for x in range(-10,1)],
-            'tol': [None],
-            'max_iter': [x for x in range(1,5)],
-        }
+    for i in range(ITERATIONS):
 
-        grid_search_cv = GridSearchCV(Perceptron(), params)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_PERCENTAGE)
 
-    elif type == NAIVE:
-        params = {}
+        if type == PERCEPTRON:
+            params = {
+                'alpha':[10**x for x in range(-10,1)],
+                'tol': [None],
+                'max_iter': [x for x in range(1,5)],
+            }
 
-        grid_search_cv = GridSearchCV(GaussianNB(), params)
+            grid_search_cv = GridSearchCV(Perceptron(), params)
 
-    elif type == NEAR_NEIGHBOUR:
-        params = {
-            'n_neighbors': [x for x in range(2,10)],
-            'metric': ['minkowski','euclidean','manhattan'],
-        }
+        elif type == NAIVE:
+            params = {}
 
-        grid_search_cv = GridSearchCV(KNeighborsClassifier(), params)
+            grid_search_cv = GridSearchCV(GaussianNB(), params)
 
-    elif type == TREES:
-        params = {  
-                    'max_leaf_nodes':list(range(2,3)),
-                    'min_samples_split': [5],
-                }
+        elif type == NEAR_NEIGHBOUR:
+            params = {
+                'n_neighbors': [x for x in range(2,10)],
+                'metric': ['minkowski','euclidean','manhattan'],
+            }
 
-        grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
+            grid_search_cv = GridSearchCV(KNeighborsClassifier(), params)
 
-    elif type == SVM:
-        params = {
-            'C': [10**x for x in range(-1,3)],
-            'gamma': [10**x for x in range(-1,2)],
-        }
+        elif type == TREES:
+            params = {  
+                        'max_leaf_nodes':list(range(2,3)),
+                        'min_samples_split': [5],
+                    }
 
-        grid_search_cv = GridSearchCV(SVC(), params)
+            grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
 
-    grid_search_cv.fit(x_train, y_train)
+        elif type == SVM:
+            params = {
+                'C': [10**x for x in range(-1,3)],
+                'gamma': [10**x for x in range(-1,2)],
+            }
 
-    y_pred = grid_search_cv.predict(x_test)
+            grid_search_cv = GridSearchCV(SVC(), params)
+
+        grid_search_cv.fit(x_train, y_train)
+
+        y_pred = grid_search_cv.predict(x_test)
+        all_acc.append(accuracy_score(y_test, y_pred))
+
+    print(type)
     print(classification_report(y_test, y_pred))
+    print("The average accuracy over {} iterations is : {:.2f}%.".format(ITERATIONS, 100*(sum(all_acc)/ITERATIONS)))
 
 
 def world_class_regression():
