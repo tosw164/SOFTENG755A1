@@ -22,6 +22,7 @@ from sklearn.neighbors import KNeighborsClassifier
 from sklearn.svm import SVC
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.feature_selection import SelectKBest, f_regression
+import argparse
 
 TEST_PERCENTAGE = 0.2
 MAX_PERCENTAGE = 100
@@ -34,7 +35,7 @@ SVM = "SVM"
 TREES = "TREES"
 
 
-def setup(): #preprocessing
+def worldcup_setup(): #preprocessing
     worldcup_information = pd.read_csv(FILE_PATH)
     worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
 
@@ -68,13 +69,13 @@ def setup(): #preprocessing
     return worldcup
 
 def world_cup_classification(type):
-    worldcup = setup()
+    worldcup = worldcup_setup()
 
     x = worldcup.iloc[:,:20]
     y = worldcup.iloc[:, -1]
 
     all_acc = []
-    ITERATIONS = 20
+    ITERATIONS = 50
 
     for i in range(ITERATIONS):
 
@@ -129,54 +130,85 @@ def world_cup_classification(type):
 
 
 def world_class_regression():
-    worldcup = setup()
+    worldcup = worldcup_setup()
     worldcup.drop(['Match_result'], axis=1, inplace=True)
 
     y = worldcup['Total_Scores']
-    x = SelectKBest(f_regression, k=19).fit_transform(worldcup.iloc[:,:20], y)
 
-    x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+    ITERATIONS = 10
+    all_mse_ridge = []
+    all_mse_ord = []
+    all_var_ridge = []
+    all_var_ord = []
 
-    #=========================================================================
-    ## Ridge Regression
-    #=========================================================================
-    reg = Ridge(alpha = .5)
+    for i in range(ITERATIONS):
+        x = SelectKBest(f_regression, k=2).fit_transform(worldcup.iloc[:,:20], y)
 
-    reg.fit(x_train, y_train)
+        x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
-    y_pred = reg.predict(x_test)
-    y_train_pred = reg.predict(x_train)
+        #=========================================================================
+        ## Ridge Regression
+        #=========================================================================
+        reg = Ridge(alpha = .5)
+
+        reg.fit(x_train, y_train)
+
+        y_pred = reg.predict(x_test)
+        y_train_pred = reg.predict(x_train)
+
+        all_mse_ridge.append(mean_squared_error(y_test, y_pred))
+        all_var_ridge.append(r2_score(y_test, y_pred))
+
+
+        #=========================================================================
+        ## Ordinary Regression
+        #=========================================================================
+        reg = LinearRegression()
+        reg.fit(x_train, y_train)
+
+        y_pred = reg.predict(x_test)
+        y_train_pred = reg.predict(x_train)
+        all_mse_ord.append(mean_squared_error(y_test, y_pred))
+        all_var_ord.append(r2_score(y_test, y_pred))
+
+    print('Number of iterations: ', ITERATIONS)
     print('--------------Ridge---------------')
-    print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
-    print("Mean squared error for testing data: %.2f"
-          % mean_squared_error(y_test, y_pred))
-    print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
-    print("Mean squared error for training data: %.2f"
-          % mean_squared_error(y_train, y_train_pred))
-    print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
+    print("Mean squared error for testing data: %.2f" % (sum(all_mse_ridge)/ITERATIONS))
+    print('Variance score for testing data: %.2f' % (sum(all_var_ridge)/ITERATIONS))
 
-    #=========================================================================
-    ## Ordinary Regression
-    #=========================================================================
-    reg = LinearRegression()
-    reg.fit(x_train, y_train)
-
-    y_pred = reg.predict(x_test)
-    y_train_pred = reg.predict(x_train)
-
+    print('Number of iterations: ', ITERATIONS)
     print('--------------Ordinary---------------')
-    print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
-    print("Mean squared error for testing data: %.2f"
-          % mean_squared_error(y_test, y_pred))
-    print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
-    print("Mean squared error for training data: %.2f"
-          % mean_squared_error(y_train, y_train_pred))
-    print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
+    print("Mean squared error for testing data: %.2f" % (sum(all_mse_ord)/ITERATIONS))
+    print('Variance score for testing data: %.2f' % (sum(all_var_ord)/ITERATIONS))
 
 
-world_cup_classification(PERCEPTRON)
-world_cup_classification(NAIVE)
-world_cup_classification(NEAR_NEIGHBOUR)
-world_cup_classification(TREES)
-world_cup_classification(SVM)
-world_class_regression()
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
+
+    parser.add_argument('--input', help='Input relative file name', required=True)
+    parser.add_argument('--type', help='type in ["regression", "classification"]', required=True)
+    parser.add_argument('--model', help='if type == regression, enter anything. Else enter ["SVM", "DT", "KNN", "PERC", "NAIVE"]', required=True)
+
+    args = parser.parse_args()
+
+    FILE_PATH = args.input
+
+    if args.type == "regression":
+        world_class_regression()
+    elif args.type == "classification":
+        if args.model == "SVM":
+            world_cup_classification(SVM)
+        elif args.model == "DT":
+            world_cup_classification(TREES)
+        elif args.model == "KNN":
+            world_cup_classification(NEAR_NEIGHBOUR)
+        elif args.model == "PERC":
+            world_cup_classification(PERCEPTRON)
+        elif args.model == "NAIVE":
+            world_cup_classification(NAIVE)
+        else:
+            print('Please enter ["SVM", "DT", "KNN", "PERC", "NAIVE"] for classification')
+
+    else:
+        print('Please enter "regression" or "classification"')
