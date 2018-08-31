@@ -18,6 +18,7 @@ from sklearn.svm import SVC
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import mean_squared_error, classification_report
+import argparse
 
 TEST_PERCENTAGE = 0.2
 MAX_PERCENTAGE = 100
@@ -105,10 +106,10 @@ def landsat_classification(type):
 
         elif type == SVM:
             params = {
-                # 'C': [10**x for x in range(-1,0)],
-                'C': [1],
-                # 'gamma': [10**x for x in range(-1,0)],
-                'gamma': [1],
+                'C': [10**x for x in range(-1,1)],
+                # 'C': [1],
+                'gamma': [10**x for x in range(-1,1)],
+                # 'gamma': [1],
             }
 
             grid_search_cv = GridSearchCV(SVC(), params)
@@ -121,10 +122,25 @@ def landsat_classification(type):
     print(classification_report(y_test, y_pred))
     print("The average accuracy over {} iterations is : {:.2f}%.".format(ITERATIONS, 100*(sum(all_acc)/ITERATIONS)))
 
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument('--input', help='Input relative file name', required=True)
+    parser.add_argument('--model', help='enter ["SVM", "DT", "KNN", "PERC", "NAIVE"]', required=True)
 
-# landsat_classification(PERCEPTRON)
-# landsat_classification(NAIVE)
-# landsat_classification(NEAR_NEIGHBOUR)
-landsat_classification(TREES)
-# landsat_classification(SVM)
+    args = parser.parse_args()
+
+    FILE_PATH = args.input
+
+    if args.model == "SVM":
+        landsat_classification(SVM)
+    elif args.model == "DT":
+        landsat_classification(TREES)
+    elif args.model == "KNN":
+        landsat_classification(NEAR_NEIGHBOUR)
+    elif args.model == "PERC":
+        landsat_classification(PERCEPTRON)
+    elif args.model == "NAIVE":
+        landsat_classification(NAIVE)
+    else:
+        print('Please enter ["SVM", "DT", "KNN", "PERC", "NAIVE"] for model')
