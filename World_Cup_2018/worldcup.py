@@ -15,21 +15,15 @@ from sklearn.model_selection import GridSearchCV
 
 worldcup_information = pd.read_csv('2018 worldcup.csv')
 worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
-# worldcup_information = occ
 print(worldcup_information.describe())
 
-print(worldcup_information.shape)
-# print(worldcup_information)
-
+# print(worldcup_information.shape)
 
 wc_features = worldcup_information.iloc[:, np.arange(21)].copy()
 wc_goals = worldcup_information.iloc[:,21].copy()
 wc_result = worldcup_information.iloc[:,22].copy()
-# print(wc_result)
-# print(wc_goals)
 
-# Create a class to select numerical or categorical columns 
-# since Scikit-Learn doesn't handle DataFrames in this wise manner yet
+# Obtained from tutorial code
 class DataFrameSelector(BaseEstimator, TransformerMixin):
     def __init__(self, attribute_names):
         self.attribute_names = attribute_names
@@ -49,26 +43,11 @@ wc_result.reset_index(drop=True, inplace=True)
 
 feature_prep = pd.DataFrame(data=full_pipe.fit_transform(wc_features), index=np.arange(1,65))
 feature_prep.reset_index(drop=True, inplace=True)
-# print(feature_prep)
-print('a')
-print(feature_prep.shape)
-print(wc_result.shape)
 
 worldcup = pd.concat([feature_prep, wc_goals, wc_result.to_frame()], axis=1)
-print(worldcup.shape)
-
-
-# print(worldcup[:10][:])
 
 x = worldcup.iloc[:,:20]
 y = worldcup['Match_result']
-
-# print(x[:10][:])
-# print("x", x.shape)
-
-# print(y[:10][:])
-# print("y", y.shape)
-
 
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import accuracy_score
@@ -83,7 +62,6 @@ params = {
 			'min_samples_split': [5],
 		}
 
-# grid_searchgrid_search_cv = GridSearchCV(DecisionTreeClassifier(random_state=42), params, n_jobs=-1, verbose=1)
 grid_search_cv = GridSearchCV(DecisionTreeClassifier(random_state=42), params)
 grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
@@ -147,9 +125,7 @@ from sklearn.svm import SVC
 
 params = {
 	'C': [10**x for x in range(-1,3)],
-	# 'C': [1],
 	'gamma': [10**x for x in range(-1,2)],
-	# 'gamma': [1],
 }
 
 grid_search_cv = GridSearchCV(SVC(), params)
@@ -161,7 +137,6 @@ print("The prediction accuracy using the SVM is : {:.2f}%.".format(100*accuracy_
 
 #=========================================================================
 ##  Regression
-print("REGRESSION")
 #=========================================================================
 from sklearn.metrics import mean_squared_error, r2_score
 
@@ -191,14 +166,12 @@ print("Mean squared error for testing data: %.2f"
 print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
 print("Mean squared error for training data: %.2f"
       % mean_squared_error(y_train, y_train_pred))
-# Explained variance score: 1 is perfect prediction
 print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
 
 #=========================================================================
 ## Ordinary Regression
 #=========================================================================
 from sklearn.linear_model import LinearRegression
-
 
 reg = LinearRegression()
 reg.fit(x_train, y_train)
@@ -213,5 +186,4 @@ print("Mean squared error for testing data: %.2f"
 print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
 print("Mean squared error for training data: %.2f"
       % mean_squared_error(y_train, y_train_pred))
-# Explained variance score: 1 is perfect prediction
 print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
