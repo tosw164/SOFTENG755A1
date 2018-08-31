@@ -11,13 +11,25 @@ import matplotlib.pyplot as plt
 from sklearn.datasets import make_moons
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.model_selection import GridSearchCV
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_squared_error, r2_score
+from sklearn.linear_model import LinearRegression
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import accuracy_score
+from sklearn.linear_model import Perceptron
+from sklearn.naive_bayes import GaussianNB
+from sklearn.neighbors import KNeighborsClassifier
+from sklearn.svm import SVC
+from sklearn.metrics import mean_squared_error, r2_score
 
+
+
+
+TEST_PERCENTAGE = 0.2
+MAX_PERCENTAGE = 100
 
 worldcup_information = pd.read_csv('2018 worldcup.csv')
 worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
-print(worldcup_information.describe())
-
-# print(worldcup_information.shape)
 
 wc_features = worldcup_information.iloc[:, np.arange(21)].copy()
 wc_goals = worldcup_information.iloc[:,21].copy()
@@ -49,10 +61,7 @@ worldcup = pd.concat([feature_prep, wc_goals, wc_result.to_frame()], axis=1)
 x = worldcup.iloc[:,:20]
 y = worldcup['Match_result']
 
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import accuracy_score
-
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_PERCENTAGE)
 
 #=========================================================================
 ## Decision Tree Classification
@@ -62,18 +71,16 @@ params = {
 			'min_samples_split': [5],
 		}
 
-grid_search_cv = GridSearchCV(DecisionTreeClassifier(random_state=42), params)
+grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
 grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
 
 y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the decision tree is : {:.2f}%.".format(100*accuracy_score(y_test, y_pred)))
+print("The prediction accuracy using the decision tree is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 #=========================================================================
 ## Perceptron
 #=========================================================================
-from sklearn.linear_model import Perceptron
-
 params = {
 	'alpha':[10**x for x in range(-10,1)],
 	'tol': [None],
@@ -85,13 +92,11 @@ grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
 
 y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Perceptron is : {:.2f}%.".format(100*accuracy_score(y_test, y_pred)))
+print("The prediction accuracy using the Perceptron is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 #=========================================================================
 ## Naive Baysian
 #=========================================================================
-from sklearn.naive_bayes import GaussianNB
-
 params = {}
 
 grid_search_cv = GridSearchCV(GaussianNB(), params)
@@ -99,13 +104,11 @@ grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
 
 y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Naive Baysean is : {:.2f}%.".format(100*accuracy_score(y_test, y_pred)))
+print("The prediction accuracy using the Naive Baysean is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 #=========================================================================
 ## Nearest Neighbour
 #=========================================================================
-from sklearn.neighbors import KNeighborsClassifier
-
 params = {
 	'n_neighbors': [x for x in range(2,10)],
 	'metric': ['minkowski','euclidean','manhattan'],
@@ -116,13 +119,11 @@ grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
 
 y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Nearest Neighbour is : {:.2f}%.".format(100*accuracy_score(y_test, y_pred)))
+print("The prediction accuracy using the Nearest Neighbour is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 #=========================================================================
 ## SVM
 #=========================================================================
-from sklearn.svm import SVC
-
 params = {
 	'C': [10**x for x in range(-1,3)],
 	'gamma': [10**x for x in range(-1,2)],
@@ -133,13 +134,11 @@ grid_search_cv.fit(x_train, y_train)
 print(grid_search_cv.best_estimator_)
 
 y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the SVM is : {:.2f}%.".format(100*accuracy_score(y_test, y_pred)))
+print("The prediction accuracy using the SVM is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 #=========================================================================
 ##  Regression
 #=========================================================================
-from sklearn.metrics import mean_squared_error, r2_score
-
 worldcup.drop(['Match_result'], axis=1, inplace=True)
 
 
@@ -151,8 +150,6 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 #=========================================================================
 ## Ridge Regression
 #=========================================================================
-from sklearn.linear_model import Ridge
-
 reg = Ridge(alpha = .5)
 
 reg.fit(x_train, y_train)
@@ -171,8 +168,6 @@ print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred)
 #=========================================================================
 ## Ordinary Regression
 #=========================================================================
-from sklearn.linear_model import LinearRegression
-
 reg = LinearRegression()
 reg.fit(x_train, y_train)
 
