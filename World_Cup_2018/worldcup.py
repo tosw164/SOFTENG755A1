@@ -27,157 +27,180 @@ TEST_PERCENTAGE = 0.2
 MAX_PERCENTAGE = 100
 FILE_PATH = '2018 worldcup.csv'
 
-worldcup_information = pd.read_csv(FILE_PATH)
-worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
-
-wc_features = worldcup_information.iloc[:, np.arange(21)].copy()
-wc_goals = worldcup_information.iloc[:,21].copy()
-wc_result = worldcup_information.iloc[:,22].copy()
-
-# Obtained from tutorial code
-class DataFrameSelector(BaseEstimator, TransformerMixin):
-    def __init__(self, attribute_names):
-        self.attribute_names = attribute_names
-    def fit(self, X, y=None):
-        return self
-    def transform(self, X):
-        return X[self.attribute_names].values
+PERCEPTRON = "PERCEPTRON"
+NAIVE = "NAIVE"
+NEAR_NEIGHBOUR = "NEAR_NEIGHBOUR"
+SVM = "SVM"
+TREES = "TREES"
 
 
-full_pipe = Pipeline([
-		('selector', DataFrameSelector(list(wc_features))),
-		('imputer', Imputer(strategy='median')),
-		('std_scaler', StandardScaler()),
-	])
+def setup(): #preprocessing
+	worldcup_information = pd.read_csv(FILE_PATH)
+	worldcup_information.drop(['Date', 'Location', 'Phase', 'Team1', 'Team1_Continent', 'Team2', 'Team2_Continent', 'Normal_Time'], axis=1, inplace=True)
 
-wc_result.reset_index(drop=True, inplace=True)
+	wc_features = worldcup_information.iloc[:, np.arange(21)].copy()
+	wc_goals = worldcup_information.iloc[:,21].copy()
+	wc_result = worldcup_information.iloc[:,22].copy()
 
-feature_prep = pd.DataFrame(data=full_pipe.fit_transform(wc_features), index=np.arange(1,65))
-feature_prep.reset_index(drop=True, inplace=True)
+	# Obtained from tutorial code
+	class DataFrameSelector(BaseEstimator, TransformerMixin):
+	    def __init__(self, attribute_names):
+	        self.attribute_names = attribute_names
+	    def fit(self, X, y=None):
+	        return self
+	    def transform(self, X):
+	        return X[self.attribute_names].values
 
-worldcup = pd.concat([feature_prep, wc_goals, wc_result.to_frame()], axis=1)
 
-x = worldcup.iloc[:,:20]
-y = worldcup['Match_result']
+	full_pipe = Pipeline([
+			('selector', DataFrameSelector(list(wc_features))),
+			('imputer', Imputer(strategy='median')),
+			('std_scaler', StandardScaler()),
+		])
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_PERCENTAGE)
+	wc_result.reset_index(drop=True, inplace=True)
 
-#=========================================================================
-## Decision Tree Classification
-#=========================================================================
-params = {	
-			'max_leaf_nodes':list(range(2,3)),
-			'min_samples_split': [5],
+	feature_prep = pd.DataFrame(data=full_pipe.fit_transform(wc_features), index=np.arange(1,65))
+	feature_prep.reset_index(drop=True, inplace=True)
+
+	worldcup = pd.concat([feature_prep, wc_goals, wc_result.to_frame()], axis=1)
+
+	return worldcup
+
+def world_cup_classification(type):
+	worldcup = setup()
+
+	x = worldcup.iloc[:,:20]
+	y = worldcup['Match_result']
+
+	x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=TEST_PERCENTAGE)
+
+	if type == PERCEPTRON:
+		#=========================================================================
+		## Perceptron
+		#=========================================================================
+		params = {
+			'alpha':[10**x for x in range(-10,1)],
+			'tol': [None],
+			'max_iter': [x for x in range(1,5)],
 		}
 
-grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
-grid_search_cv.fit(x_train, y_train)
-print(grid_search_cv.best_estimator_)
+		grid_search_cv = GridSearchCV(Perceptron(), params)
+		grid_search_cv.fit(x_train, y_train)
+		print(grid_search_cv.best_estimator_)
 
-y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the decision tree is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
+		y_pred = grid_search_cv.predict(x_test)
+		print("The prediction accuracy using the Perceptron is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
-#=========================================================================
-## Perceptron
-#=========================================================================
-params = {
-	'alpha':[10**x for x in range(-10,1)],
-	'tol': [None],
-	'max_iter': [x for x in range(1,5)],
-}
+	elif type == NAIVE:
+		#=========================================================================
+		## Naive Baysian
+		#=========================================================================
+		params = {}
 
-grid_search_cv = GridSearchCV(Perceptron(), params)
-grid_search_cv.fit(x_train, y_train)
-print(grid_search_cv.best_estimator_)
+		grid_search_cv = GridSearchCV(GaussianNB(), params)
+		grid_search_cv.fit(x_train, y_train)
+		print(grid_search_cv.best_estimator_)
 
-y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Perceptron is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
+		y_pred = grid_search_cv.predict(x_test)
+		print("The prediction accuracy using the Naive Baysean is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
-#=========================================================================
-## Naive Baysian
-#=========================================================================
-params = {}
+	elif type == NEAR_NEIGHBOUR:
+		#=========================================================================
+		## Nearest Neighbour
+		#=========================================================================
+		params = {
+			'n_neighbors': [x for x in range(2,10)],
+			'metric': ['minkowski','euclidean','manhattan'],
+		}
 
-grid_search_cv = GridSearchCV(GaussianNB(), params)
-grid_search_cv.fit(x_train, y_train)
-print(grid_search_cv.best_estimator_)
+		grid_search_cv = GridSearchCV(KNeighborsClassifier(), params)
+		grid_search_cv.fit(x_train, y_train)
+		print(grid_search_cv.best_estimator_)
 
-y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Naive Baysean is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
+		y_pred = grid_search_cv.predict(x_test)
+		print("The prediction accuracy using the Nearest Neighbour is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
-#=========================================================================
-## Nearest Neighbour
-#=========================================================================
-params = {
-	'n_neighbors': [x for x in range(2,10)],
-	'metric': ['minkowski','euclidean','manhattan'],
-}
+	elif type == TREES:
+		#=========================================================================
+		## Decision Tree Classification
+		#=========================================================================
+		params = {	
+					'max_leaf_nodes':list(range(2,3)),
+					'min_samples_split': [5],
+				}
 
-grid_search_cv = GridSearchCV(KNeighborsClassifier(), params)
-grid_search_cv.fit(x_train, y_train)
-print(grid_search_cv.best_estimator_)
+		grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
+		grid_search_cv.fit(x_train, y_train)
+		print(grid_search_cv.best_estimator_)
 
-y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the Nearest Neighbour is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
-
-#=========================================================================
-## SVM
-#=========================================================================
-params = {
-	'C': [10**x for x in range(-1,3)],
-	'gamma': [10**x for x in range(-1,2)],
-}
-
-grid_search_cv = GridSearchCV(SVC(), params)
-grid_search_cv.fit(x_train, y_train)
-print(grid_search_cv.best_estimator_)
-
-y_pred = grid_search_cv.predict(x_test)
-print("The prediction accuracy using the SVM is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
-
-#=========================================================================
-##  Regression
-#=========================================================================
-worldcup.drop(['Match_result'], axis=1, inplace=True)
+		y_pred = grid_search_cv.predict(x_test)
+		print("The prediction accuracy using the decision tree is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
 
-x = worldcup.iloc[:,:20]
-y = worldcup['Total_Scores']
+	elif type == SVM:
+		#=========================================================================
+		## SVM
+		#=========================================================================
+		params = {
+			'C': [10**x for x in range(-1,3)],
+			'gamma': [10**x for x in range(-1,2)],
+		}
 
-x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+		grid_search_cv = GridSearchCV(SVC(), params)
+		grid_search_cv.fit(x_train, y_train)
+		print(grid_search_cv.best_estimator_)
 
-#=========================================================================
-## Ridge Regression
-#=========================================================================
-reg = Ridge(alpha = .5)
+		y_pred = grid_search_cv.predict(x_test)
+		print("The prediction accuracy using the SVM is : {:.2f}%.".format(MAX_PERCENTAGE*accuracy_score(y_test, y_pred)))
 
-reg.fit(x_train, y_train)
 
-y_pred = reg.predict(x_test)
-y_train_pred = reg.predict(x_train)
-print('--------------Ridge---------------')
-print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
-print("Mean squared error for testing data: %.2f"
-      % mean_squared_error(y_test, y_pred))
-print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
-print("Mean squared error for training data: %.2f"
-      % mean_squared_error(y_train, y_train_pred))
-print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
+def world_class_regression():
+	worldcup = setup()
 
-#=========================================================================
-## Ordinary Regression
-#=========================================================================
-reg = LinearRegression()
-reg.fit(x_train, y_train)
+	#=========================================================================
+	##  Regression
+	#=========================================================================
+	worldcup.drop(['Match_result'], axis=1, inplace=True)
 
-y_pred = reg.predict(x_test)
-y_train_pred = reg.predict(x_train)
 
-print('--------------Ordinary---------------')
-print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
-print("Mean squared error for testing data: %.2f"
-      % mean_squared_error(y_test, y_pred))
-print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
-print("Mean squared error for training data: %.2f"
-      % mean_squared_error(y_train, y_train_pred))
-print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
+	x = worldcup.iloc[:,:20]
+	y = worldcup['Total_Scores']
+
+	x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
+
+	#=========================================================================
+	## Ridge Regression
+	#=========================================================================
+	reg = Ridge(alpha = .5)
+
+	reg.fit(x_train, y_train)
+
+	y_pred = reg.predict(x_test)
+	y_train_pred = reg.predict(x_train)
+	print('--------------Ridge---------------')
+	print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
+	print("Mean squared error for testing data: %.2f"
+	      % mean_squared_error(y_test, y_pred))
+	print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
+	print("Mean squared error for training data: %.2f"
+	      % mean_squared_error(y_train, y_train_pred))
+	print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
+
+	#=========================================================================
+	## Ordinary Regression
+	#=========================================================================
+	reg = LinearRegression()
+	reg.fit(x_train, y_train)
+
+	y_pred = reg.predict(x_test)
+	y_train_pred = reg.predict(x_train)
+
+	print('--------------Ordinary---------------')
+	print('Coefficients and Intercept are: ', reg.coef_,"   ",reg.intercept_,' respectively')
+	print("Mean squared error for testing data: %.2f"
+	      % mean_squared_error(y_test, y_pred))
+	print('Variance score for testing data: %.2f' % r2_score(y_test, y_pred))
+	print("Mean squared error for training data: %.2f"
+	      % mean_squared_error(y_train, y_train_pred))
+	print('Variance score for training data: %.2f' % r2_score(y_train, y_train_pred))
