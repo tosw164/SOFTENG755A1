@@ -1,5 +1,5 @@
 Project contains 4 folders, each containing a single .py script to run machine learning on that specific data set.
-
+-------------------------------------------------------------------------------------------------------------------
 World Cup: Classification and Regression
 	- Run by calling either
 		python3 worldcup.py --input FILE_PATH --type classification --model MODEL_NAME
@@ -13,10 +13,9 @@ Traffic: Regression
 Landsat & Occupancy: Classification
 	- Run by calling 
 		python3 landsat.py --input FILE_PATH --model MODEL_NAME
-
-
+-------------------------------------------------------------------------------------------------------------------
 NOTE: there is no error logic for arguments passed in CLI. Please ensure all information entered is correct
-
+-------------------------------------------------------------------------------------------------------------------
 --type values:
 	regression = regression, enter anything for --model as it will run all regression models
 	classification = classification. Please enter --model value
@@ -29,4 +28,4 @@ NOTE: there is no error logic for arguments passed in CLI. Please ensure all inf
 	NAIVE = Naive Bayes
 	PERC = Perceptron
 	KNN = K Nearest Neighbours
-
+-------------------------------------------------------------------------------------------------------------------
