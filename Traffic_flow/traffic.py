@@ -22,8 +22,6 @@ from sklearn.linear_model import Ridge
 from sklearn.linear_model import LinearRegression
 from sklearn.feature_selection import SelectKBest, f_regression
 
-
-
 traffic_information = pd.read_csv('traffic_flow_data.csv')
 
 t_features = traffic_information.iloc[:, np.arange(450)].copy()

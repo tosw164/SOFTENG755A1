@@ -75,8 +75,8 @@ def landsat_classification(type):
 
         if type == TREES:
             params = {  
-                        'max_leaf_nodes':list(range(2,3)),
-                        'min_samples_split': [5],
+                        'max_leaf_nodes':list(range(2,50)),
+                        'min_samples_split': [3,4,5],
                     }
 
             grid_search_cv = GridSearchCV(DecisionTreeClassifier(), params)
@@ -123,8 +123,8 @@ def landsat_classification(type):
 
 
 
-landsat_classification(PERCEPTRON)
-landsat_classification(NAIVE)
-landsat_classification(NEAR_NEIGHBOUR)
+# landsat_classification(PERCEPTRON)
+# landsat_classification(NAIVE)
+# landsat_classification(NEAR_NEIGHBOUR)
 landsat_classification(TREES)
-landsat_classification(SVM)
+# landsat_classification(SVM)
